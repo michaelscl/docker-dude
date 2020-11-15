@@ -1,0 +1,67 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides: dude
+# Required-Start: $remote_fs $syslog
+# Required-Stop: $remote_fs $syslog
+# Default-Start: 2 3 4 5
+# Default-Stop:
+# Short-Description: Dude Server
+### END INIT INFO
+    
+action=${1}
+
+# ----------------------------------------------
+# User Options
+# ----------------------------------------------
+xvfb_pidfile='/var/run/dude-xvfb.pid'
+wine_pidfile='/var/run/dude-wine.pid'
+virtual_display=':1'
+dude_path='/dude'
+# ----------------------------------------------
+
+export DISPLAY=$virtual_display
+export WINEPREFIX=$dude_path
+
+start ()
+{
+ echo -n 'Starting Dude virtual display: '
+ Xvfb $virtual_display -screen 0 800x600x16 &> /dev/null &
+ echo $! > $xvfb_pidfile
+ echo 'ok'
+ echo -n 'Starting Dude Server: '
+ sleep 5
+ export WINEDLLOVERRIDES="mscoree,mshtml="
+ wine 'z:\dude\dude.exe' --server
+ echo $! > $wine_pidfile
+ echo 'ok'
+}
+
+stop ()
+{
+ echo -n 'Stopping Dude Server: '
+ kill $(cat $wine_pidfile)
+ rm -f $wine_pidfile
+ sleep 5
+ echo 'ok'
+ echo -n 'Stopping Dude virtual display: '
+ kill $(cat $xvfb_pidfile)
+ rm -f $xvfb_pidfile
+ echo 'ok'
+}
+
+case "$action" in
+ start)
+  start
+ ;;
+
+ stop)
+  stop
+ ;;
+
+ *)
+  echo "Usage: $0 {start|stop}"
+ ;;
+esac
+
+# -----------------------------------------------------------------------

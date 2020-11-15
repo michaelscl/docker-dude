@@ -7,28 +7,28 @@ ENV DUDE_STUFF=dude-install-$DUDE_VERSION.exe
 COPY container/ /
 COPY installer/$DUDE_STUFF /
 
-
 RUN export DEBIAN_FRONTEND=noninteractive \
   && dpkg --add-architecture i386 \
   && apt-get -qq clean \
   && apt-get -qq update \
-  && apt-get -qq install wget gnupg1 software-properties-common apt-utils x11vnc xvfb xdotool p7zip-full
+  && apt-get -qq install wget gnupg1 software-properties-common apt-utils x11vnc xvfb xdotool
   
 RUN wget -qO - https://dl.winehq.org/wine-builds/winehq.key | apt-key add - \
   && add-apt-repository "deb https://dl.winehq.org/wine-builds/ubuntu/ focal main" \
   && apt-get -qq update \
   && apt-get -qq install --install-recommends winehq-stable
 
-RUN mkdir /dude \
-  && 7z x -o/dude /$DUDE_STUFF \
-  && chmod +x /dude/dude.exe
-
 RUN apt-get -qq clean \
   && rm --recursive --force /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  && rm --force /$DUDE_STUFF
+  && rm --force /installer
 
-RUN chmod +x /etc/init.d/dude \
-  && update-rc.d dude defaults
+RUN mkdir /dude \
+  && Xvfb :1 -screen 0 800x600x16 & ; \
+  export WINEPREFIX='/dude' && export DISPLAY=':1' \
+  && wine /installer/dude-install-6.47.7.exe & \
+  && sleep 10 \
+  && xdotool windowfocus 724 \
+  && xdotool key --delay 5000 Return Return Return Return
 
 EXPOSE 8129
 
